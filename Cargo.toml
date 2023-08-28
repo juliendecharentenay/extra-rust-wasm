@@ -1,0 +1,35 @@
+[package]
+name = "extra-rust-webgl"
+version = "0.1.0"
+authors = ["Julien de Charentenay <julien@charentenay.me>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nalgebra = "0"
+wasm-bindgen = { version = "0", optional = true }
+derive_builder = "0"
+js-sys = "0"
+
+[dependencies.web-sys]
+version = "0"
+# optional = true
+features = [
+  'MouseEvent',
+  'Touch',
+  'TouchEvent',
+  'TouchList',
+  'WheelEvent',
+  'WebGlBuffer',
+  'WebGlVertexArrayObject',
+  'WebGl2RenderingContext',
+  'WebGlProgram',
+  'WebGlShader',
+  'WebGlUniformLocation',
+]
+
+[features]
+wasm = [ "wasm-bindgen" ] # , "web-sys" ]
+
