@@ -5,7 +5,7 @@ pub mod gridbuilder;
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub struct Grid {
-  program: web_sys::WebGlProgram,
+  program: std::rc::Rc<std::cell::RefCell<Option<web_sys::WebGlProgram>>>,
   normal:  nalgebra::Vector3<f32>,
   tangent: nalgebra::Vector3<f32>,
   center:  nalgebra::Point3<f32>,
@@ -16,6 +16,16 @@ pub struct Grid {
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl Grid {
+  fn new_without_context(normal:   nalgebra::Vector3<f32>,
+         tangent:  nalgebra::Vector3<f32>,
+         center:   nalgebra::Point3<f32>,
+         delta:    f32,
+         n:        u32) -> Result<Grid, Error>
+  {
+    Ok( Grid { program: std::rc::Rc::new(std::cell::RefCell::new(None)), 
+               normal, tangent, center, delta, n, } )
+  }
+
   fn new(context: &web_sys::WebGl2RenderingContext,
          normal:   nalgebra::Vector3<f32>,
          tangent:  nalgebra::Vector3<f32>,
@@ -28,7 +38,20 @@ impl Grid {
       .vertex_shader_source(Grid::VERTEX_SHADER_SOURCE)
       .fragment_shader_source(Grid::FRAGMENT_SHADER_SOURCE)
       .build()?;
-    Ok( Grid { program, normal, tangent, center, delta, n, } )
+    Ok( Grid { program: std::rc::Rc::new(std::cell::RefCell::new(Some(program))), 
+               normal, tangent, center, delta, n, } )
+  }
+
+  /// Retrieve the program (compile if required)
+  fn program_rc(&self, context: &web_sys::WebGl2RenderingContext) -> Result<std::rc::Rc<std::cell::RefCell<Option<web_sys::WebGlProgram>>>, Error> {
+    if self.program.borrow().is_none() {
+      *self.program.borrow_mut() = Some(WebGlProgramBuilder::new()
+        .context(context)
+        .vertex_shader_source(Grid::VERTEX_SHADER_SOURCE)
+        .fragment_shader_source(Grid::FRAGMENT_SHADER_SOURCE)
+        .build()?);
+    }
+    Ok(std::rc::Rc::clone(&self.program))
   }
 
   /// Draw the grid on the context
@@ -44,8 +67,11 @@ impl Grid {
   }
 
   fn redraw_impl(&self, context: &web_sys::WebGl2RenderingContext, camera: Vec<f32>) -> Result<(), Error> {
-    context.use_program(Some(&self.program));
-    let u_matrix = context.get_uniform_location(&self.program, "uMatrix");
+    let program_rc     = self.program_rc(context)?;
+    let program_borrow = program_rc.borrow();
+    let program        = program_borrow.as_ref().ok_or("Program not initialized")?;
+    context.use_program(Some(program));
+    let u_matrix = context.get_uniform_location(program, "uMatrix");
     context.uniform_matrix4fv_with_f32_array(u_matrix.as_ref(), false, camera.as_slice());
     let n: i32 = (4*(self.n+1)).try_into()?;
     context.draw_arrays(web_sys::WebGl2RenderingContext::LINES, 0, n);
@@ -81,6 +107,9 @@ impl Grid {
           key: &str,
           array: &Vec<f32>) -> Result<(), Error>
   {
+    let program_rc     = self.program_rc(context)?;
+    let program_borrow = program_rc.borrow();
+    let program        = program_borrow.as_ref().ok_or("Program not initialized")?;
     let buffer = context.create_buffer().ok_or("Unable to create buffer")?;
     context.bind_buffer(web_sys::WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
     unsafe {
@@ -94,7 +123,7 @@ impl Grid {
     context.bind_vertex_array(Some(&va));
 
     context.vertex_attrib_pointer_with_i32(0, 3, web_sys::WebGl2RenderingContext::FLOAT, false, 0, 0);
-    let position = context.get_attrib_location(&self.program, key);
+    let position = context.get_attrib_location(program, key);
     context.enable_vertex_attrib_array(position as u32);
     
     context.bind_vertex_array(Some(&va));

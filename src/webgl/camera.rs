@@ -85,6 +85,9 @@ impl Camera {
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl Camera {
+  /// Retrieve the underlying `Camera`
+  pub fn to_camera(self) -> Result<Camera, JsError> { Ok(self) }
+
   /// Handle `mousedown` event
   pub fn on_mouse_down(self, event: web_sys::MouseEvent) -> Result<MouseCamera, JsError> {
     Ok(MouseCameraBuilder::default()

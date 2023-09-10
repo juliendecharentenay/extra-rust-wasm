@@ -4,5 +4,6 @@ mod webglprogrambuilder; pub use webglprogrambuilder::WebGlProgramBuilder;
 
 pub mod camera;
 pub mod grid;
+pub mod hexahedron;
 
 
