@@ -12,9 +12,7 @@ pub struct HexahedronBuilder {
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl HexahedronBuilder {
   /// Create an empty `HexahedronBuilder`
-  pub fn new() -> HexahedronBuilder {
-    HexahedronBuilder { start: None, end: None }
-  }
+  pub fn new() -> HexahedronBuilder { HexahedronBuilder::default() }
 
   /// Specify start point
   pub fn start(mut self, start: &[f32]) -> HexahedronBuilder { self.start = Some(nalgebra::Point3::from_slice(start)); self }
@@ -25,7 +23,7 @@ impl HexahedronBuilder {
   /// Build an `Hexahedron` object
   pub fn build(self) -> Result<Hexahedron, JsError> {
     Ok(
-      Hexahedron::new_without_context(
+      Hexahedron::new(
         self.start.ok_or("Start is not specified")?,
         self.end.ok_or("End is not specified")?,
       )?

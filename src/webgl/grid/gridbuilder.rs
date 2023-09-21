@@ -41,21 +41,7 @@ impl GridBuilder {
   /// Build a `Grid` object
   pub fn build(self) -> Result<Grid, JsError> {
     Ok(
-      Grid::new_without_context(
-        self.normal.ok_or("Normal not specified")?,
-        self.tangent.ok_or("Tangent not specified")?,
-        self.center.ok_or("Center not specified")?,
-        self.delta.ok_or("Grid spacing (delta) not specified")?,
-        self.n.ok_or("Number of grid cell (n) not specified")?,
-      )?
-    )
-  }
-
-  /// Build a `Grid` for the provided WebGl rendering context
-  pub fn build_with_context(self, context: &web_sys::WebGl2RenderingContext) -> Result<Grid, JsError> {
-    Ok( 
       Grid::new(
-        context,
         self.normal.ok_or("Normal not specified")?,
         self.tangent.ok_or("Tangent not specified")?,
         self.center.ok_or("Center not specified")?,

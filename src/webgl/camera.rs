@@ -76,6 +76,13 @@ impl Camera {
     Ok(self.view.as_slice().iter().cloned().collect())
   }
 
+  /// Convert the camera to the transpose of the inverse of the 4x4 view matrix
+  pub fn as_transpose_inverse_view_matrix(&self) -> Result<Vec<f32>, JsError> {
+    Ok(self.view.try_inverse().ok_or("Unable to inverse view matrix")?
+       .transpose()
+       .as_slice().iter().cloned().collect())
+  }
+
   /// Convert the camera to a 4x4 projection matrix
   pub fn as_projection_matrix(&self) -> Result<Vec<f32>, JsError> {
     Ok(self.projection_matrix4()?.as_slice().iter().cloned().collect())
@@ -87,6 +94,9 @@ impl Camera {
 impl Camera {
   /// Retrieve the underlying `Camera`
   pub fn to_camera(self) -> Result<Camera, JsError> { Ok(self) }
+
+  /// Retrieve the underlying `Camera`
+  pub fn as_camera(&self) -> Result<Camera, JsError> { Ok(self.clone()) }
 
   /// Handle `mousedown` event
   pub fn on_mouse_down(self, event: web_sys::MouseEvent) -> Result<MouseCamera, JsError> {

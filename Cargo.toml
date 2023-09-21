@@ -17,6 +17,7 @@ js-sys = "0"
 version = "0"
 # optional = true
 features = [
+  'console',
   'MouseEvent',
   'Touch',
   'TouchEvent',

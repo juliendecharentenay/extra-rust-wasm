@@ -13,6 +13,10 @@ pub struct Error {
   e: Box<dyn std::error::Error>,
 }
 
+impl From<JsError> for Error {
+  fn from(e: JsError) -> Error { format!("{:?}", e).into() }
+}
+
 impl From<std::num::TryFromIntError> for Error {
   fn from(e: std::num::TryFromIntError) -> Error { e.to_string().into() }
 }

@@ -34,6 +34,9 @@ impl TouchCamera {
   /// Retrieve the underlying `Camera`
   pub fn to_camera(self) -> Result<Camera, JsError> { Ok(self.camera()) }
 
+  /// Retrieve the underlying `Camera`
+  pub fn as_camera(&self) -> Result<Camera, JsError> { Ok(self.camera()) }
+
   /// Convert the camera to a 4x4 view-projection matrix
   pub fn as_matrix(&self) -> Result<Vec<f32>, JsError> { self.camera().as_matrix() }
 
