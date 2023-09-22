@@ -55,12 +55,6 @@ impl Hexahedron {
                              (nalgebra::Vector3<f32>, nalgebra::Vector3<f32>, nalgebra::Vector3<f32>))>, Error>>()?
       .into_iter()
       .unzip();
-    web_sys::console::log_1(&wasm_bindgen::JsValue::from_str(format!("{:?}", vertices).as_str()));
-      /*
-    let normals = normals.into_iter()
-      .map(|n| {(n, n, n)})
-      .collect::<Vec<(nalgebra::Vector3<f32>, nalgebra::Vector3<f32>, nalgebra::Vector3<f32>)>>();
-      */
     let info = renderer::Info::TrianglesWithNormals {
       vertices: &vertices,
       normals: &normals,
