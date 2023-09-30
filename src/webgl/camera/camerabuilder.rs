@@ -43,18 +43,23 @@ impl CameraBuilder {
 
   /// Create a `Camera` object from the builder parameters. Returns an error if parameters have not been specified.
   pub fn into(self) -> Result<Camera, JsError> {
+  /*
     let view: nalgebra::Matrix4<f32> = nalgebra::Isometry3::<f32>::look_at_rh(
       &self.eye.ok_or("Eye not specified")?,
       &self.target.ok_or("Target not specified")?,
       &self.up.ok_or("Up not specified")?,
     ).to_homogeneous();
-    Ok(Camera {
-      width: self.width.ok_or("Width not specified")?,
-      height: self.height.ok_or("Height not specified")?,
-      fov: self.fov.ok_or("fov not specified")?,
-      view,
-      distance: (self.target.ok_or("Target not specified")? - self.eye.ok_or("Eye not specified")?).norm(),
-    })
+    */
+    Ok(Camera::new(
+      self.width.ok_or("Width not specified")?,
+      self.height.ok_or("Height not specified")?,
+      self.fov.ok_or("fov not specified")?,
+      self.eye.ok_or("eye not specified")?,
+      self.target.ok_or("target not specified")?,
+      self.up.ok_or("up not specified")?,
+      // distance: (self.target.ok_or("Target not specified")? - self.eye.ok_or("Eye not specified")?).norm(),
+      )?
+    )
   }
 }
 

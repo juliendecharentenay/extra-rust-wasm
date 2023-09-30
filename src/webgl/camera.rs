@@ -14,40 +14,85 @@ pub struct Camera {
   width:  f32,
   height: f32,
   fov:    f32,
-  view:   nalgebra::Matrix4<f32>,
-  distance: f32,
+  eye:    nalgebra::Point3<f32>,
+  target: nalgebra::Point3<f32>,
+  up:     nalgebra::Vector3<f32>,
+  // view:   nalgebra::Matrix4<f32>,
+  // distance: f32,
 }
 
 impl Camera {
+  /// New
+  fn new(width: f32, height: f32, fov: f32, eye: nalgebra::Point3<f32>, target: nalgebra::Point3<f32>, 
+         up: nalgebra::Vector3<f32>) -> Result<Camera, Error> {
+    let fw: nalgebra::Vector3<f32> = (target - eye).normalize();
+    let up: nalgebra::Vector3<f32> = up.normalize();
+    let si: nalgebra::Vector3<f32> = fw.cross(&up).normalize();
+    let up = si.cross(&fw).normalize();
+    Ok(Camera {
+      width, height, fov, eye, target, up,
+    })
+  }
+
+  /// Calculate the view matrix from eye, target and up
+  fn view(&self) -> nalgebra::Matrix4<f32> {
+    nalgebra::Isometry3::look_at_rh(&self.eye, &self.target, &self.up).to_homogeneous()
+  }
+
+  /// Calculate the distance eye to target
+  fn distance(&self) -> f32 { (self.target - self.eye).norm() }
+
+  /// Create a new camera applying a rotation
+  fn rotate_view(&self, rotation: nalgebra::Rotation3<f32>) -> Camera {
+    let mut c = self.clone();
+    c.target = self.eye + rotation * (self.target - self.eye);
+    c.up     = rotation * self.up;
+    c
+  }
+
+  /// Create a new camera applying a translation
+  fn translate_view(&self, translation: nalgebra::Translation3<f32>) -> Camera {
+    let mut c = self.clone();
+    c.eye = translation * self.eye;
+    c.target = translation * self.target;
+    c
+  }
+
+  /*
   /// Create a new camera applying a view modifier
   fn modify_view(&self, modifier: nalgebra::Matrix4<f32>) -> Camera {
-    let mut c = self.clone(); c.view = modifier * c.view;
+    let mut c = self.clone(); 
+    c.eye    = self.eye + nalgebra::Vector3::from_homogeneous(modifier * nalgebra::Vector3::<f32>::new(0f32, 0f32, 0f32).to_homogeneous()).unwrap();
+    c.target = self.eye + nalgebra::Vector3::from_homogeneous(modifier * (self.target - self.eye).to_homogeneous()).unwrap();
+    c.up     = nalgebra::Vector3::from_homogeneous(modifier * self.up.to_homogeneous()).unwrap();
     c
+  }
+  */
+
+  /// Create a new camera by applying a rotation along the view direction
+  fn rotate_along_view_direction(&self, angle: f32) -> Camera {
+    self.rotate_view(nalgebra::Rotation3::new((self.target - self.eye).normalize() * angle))
   }
 
   /// Create a new camera by applying an orbit transformation
   fn orbit(&self, from_x: f32, from_y: f32, to_x: f32, to_y: f32) -> Camera {
-    self.modify_view(
-      nalgebra::Matrix4::<f32>::from_euler_angles(
-        (from_y - to_y) / self.height * self.fov,
-        (from_x - to_x) / self.height * self.fov,
-        0.0,
-      )
-    )
+    let si: nalgebra::Vector3<f32> = (self.target - self.eye).normalize().cross(&self.up).normalize();
+    self.rotate_view(nalgebra::Rotation3::new((si * (to_y - from_y) + self.up * (to_x - from_x))/self.height * self.fov))
   }
 
-  /// Create a new camera by applying a zoom `delta_y` at location `x,y`
+  /// Create a new camera by applying a zoom `delta` at location `x,y`
   fn zoom(&self, x: f32, y: f32, delta: f32) -> Camera {
-    let theta_x = ( x - 0.5*self.width)  / self.height * self.fov;
-    let theta_y = ( y - 0.5*self.height) / self.height * self.fov;
-    let translation = nalgebra::Vector3::<f32>::new(0.0, 0.0, delta / self.height * 1.0 * self.distance);
-    let rotation = nalgebra::Rotation3::<f32>::from_euler_angles(-theta_y, -theta_x, 0.0);
-    self.modify_view(nalgebra::Matrix4::<f32>::from(nalgebra::Translation3::<f32>::from( rotation * translation)))
+    let theta_x = -( x - 0.5*self.width)  / self.height * self.fov;
+    let theta_y = -( y - 0.5*self.height) / self.height * self.fov;
+    let si: nalgebra::Vector3<f32> = (self.target - self.eye).normalize().cross(&self.up).normalize();
+    let rotation = nalgebra::Rotation3::new(si * theta_y + self.up * theta_x);
+    let direction = rotation * (self.target - self.eye).normalize();
+    self.translate_view((direction * delta / self.height * 1.0 * self.distance()).into())
   }
 
   /// Extract view matrix combined with projection matrix
   fn matrix4(&self) -> Result<nalgebra::Matrix4<f32>, Error> {
-    Ok(self.projection_matrix4()? * self.view)
+    Ok(self.projection_matrix4()? * self.view())
   }
 
   /// Extract projection matrix
@@ -73,12 +118,12 @@ impl Camera {
 
   /// Convert the camera to a 4x4 view matrix
   pub fn as_view_matrix(&self) -> Result<Vec<f32>, JsError> {
-    Ok(self.view.as_slice().iter().cloned().collect())
+    Ok(self.view().as_slice().iter().cloned().collect())
   }
 
   /// Convert the camera to the transpose of the inverse of the 4x4 view matrix
   pub fn as_transpose_inverse_view_matrix(&self) -> Result<Vec<f32>, JsError> {
-    Ok(self.view.try_inverse().ok_or("Unable to inverse view matrix")?
+    Ok(self.view().try_inverse().ok_or("Unable to inverse view matrix")?
        .transpose()
        .as_slice().iter().cloned().collect())
   }

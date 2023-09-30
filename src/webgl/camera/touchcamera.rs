@@ -27,7 +27,7 @@ impl TouchCamera {
 
     self.camera
     .orbit(fr_x, fr_y, to_x, to_y)
-    .modify_view(nalgebra::Matrix4::from_euler_angles(0f32, 0f32, -alpha))
+    .rotate_along_view_direction(-alpha)
     .zoom(to_x, to_y, to_l - fr_l)
   }
 
