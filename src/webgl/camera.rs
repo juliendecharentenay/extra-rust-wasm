@@ -1,7 +1,5 @@
 use super::*;
 
-// use std::{ collections::HashMap, };
-
 mod camerabuilder; pub use camerabuilder::CameraBuilder;
 mod mousecamera; use mousecamera::{MouseCamera, MouseCameraBuilder};
 mod wheelcamera; use wheelcamera::WheelCameraBuilder;
@@ -33,6 +31,15 @@ impl Camera {
       width, height, fov, eye, target, up,
     })
   }
+
+  /// Return `f` vector (ie the unit vector in the direction `(eye, target)`)
+  fn front(&self) -> nalgebra::Vector3<f32> { (self.target - self.eye).normalize() }
+
+  /// Return `u` vector (ie the unit vector in the up direction)
+  fn up(&self) -> nalgebra::Vector3<f32> { self.up.normalize() }
+
+  /// Return `side` vector (ie the unit vector completing the front and up vector)
+  fn side(&self) -> nalgebra::Vector3<f32> { self.front().cross(&self.up()).normalize() }
 
   /// Calculate the view matrix from eye, target and up
   fn view(&self) -> nalgebra::Matrix4<f32> {
@@ -76,17 +83,15 @@ impl Camera {
 
   /// Create a new camera by applying an orbit transformation
   fn orbit(&self, from_x: f32, from_y: f32, to_x: f32, to_y: f32) -> Camera {
-    let si: nalgebra::Vector3<f32> = (self.target - self.eye).normalize().cross(&self.up).normalize();
-    self.rotate_view(nalgebra::Rotation3::new((si * (to_y - from_y) + self.up * (to_x - from_x))/self.height * self.fov))
+    self.rotate_view(nalgebra::Rotation3::new((self.side() * (to_y - from_y) + self.up() * (to_x - from_x))/self.height * self.fov))
   }
 
   /// Create a new camera by applying a zoom `delta` at location `x,y`
   fn zoom(&self, x: f32, y: f32, delta: f32) -> Camera {
     let theta_x = -( x - 0.5*self.width)  / self.height * self.fov;
     let theta_y = -( y - 0.5*self.height) / self.height * self.fov;
-    let si: nalgebra::Vector3<f32> = (self.target - self.eye).normalize().cross(&self.up).normalize();
-    let rotation = nalgebra::Rotation3::new(si * theta_y + self.up * theta_x);
-    let direction = rotation * (self.target - self.eye).normalize();
+    let rotation = nalgebra::Rotation3::new(self.side() * theta_y + self.up() * theta_x);
+    let direction = rotation * self.front(); // (self.target - self.eye).normalize();
     self.translate_view((direction * delta / self.height * 1.0 * self.distance()).into())
   }
 
@@ -101,6 +106,24 @@ impl Camera {
           self.width / self.height , self.fov,
           0.1f32, 200f32))
   }
+}
+
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+impl Camera {
+  /// Create a new camera by orbiting around the target point
+  pub fn orbit_around_target(&self, angle_x_deg: f32, angle_y_deg: f32) -> Camera {
+    let rotation = nalgebra::Rotation3::<f32>::new(self.side() * angle_y_deg * std::f32::consts::PI/180f32 + self.up() * angle_x_deg * std::f32::consts::PI/180f32);
+    let mut c = self.clone();
+    c.eye = self.target + rotation * ( self.eye - self.target );
+    c.up = rotation * self.up();
+    c
+  }
+
+  /// Create a new camera by applying a zoom `delta`
+  pub fn zoom_front(&self, delta: f32) -> Camera {
+    self.translate_view((self.front() * delta / self.height * 1.0 * self.distance()).into())
+  }
+
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
