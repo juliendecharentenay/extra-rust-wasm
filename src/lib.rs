@@ -1,3 +1,3 @@
 pub mod webgl;
-mod error; use error::{Error, JsError};
+mod error; pub use error::{Error, JsError};
 

@@ -4,6 +4,7 @@ pub mod hexahedronbuilder;
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Hexahedron {
   start: nalgebra::Point3<f32>,
   end:   nalgebra::Point3<f32>,
@@ -43,6 +44,13 @@ impl Hexahedron {
 
   /// Draw the hex on the context
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
+    Drawable::draw(self, context, renderer)
+  }
+}
+
+impl Drawable for Hexahedron {
+  /// Draw the hex on the context
+  fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     let (vertices, normals) = self.vertices()?;
     let (vertices, normals): (Vec<(_, _, _)>, Vec<(_, _, _)>) = std::iter::zip(vertices.into_iter(), normals.into_iter())
       .map(|((p1, p2, p3), n)| 

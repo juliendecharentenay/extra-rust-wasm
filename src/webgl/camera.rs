@@ -7,7 +7,7 @@ mod touchcamera; use touchcamera::{TouchCamera, TouchCameraBuilder};
 
 /// Object to represent a camera
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
-#[derive(Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Camera {
   width:  f32,
   height: f32,
@@ -18,6 +18,16 @@ pub struct Camera {
   // view:   nalgebra::Matrix4<f32>,
   // distance: f32,
 }
+
+/*
+impl Default for Camera {
+  fn default() -> Self {
+    Camera { 
+      width: 
+    }
+  }
+}
+*/
 
 impl Camera {
   /// New
@@ -166,6 +176,9 @@ impl Camera {
   /// Retrieve the underlying `Camera`
   pub fn as_camera(&self) -> Result<Camera, JsError> { Ok(self.clone()) }
 
+  /// Expose clone functionality to wasm
+  pub fn clone(&self) -> Camera { std::clone::Clone::clone(self) }
+
   /// Handle `mousedown` event
   pub fn on_mouse_down(self, event: web_sys::MouseEvent) -> Result<MouseCamera, JsError> {
     Ok(MouseCameraBuilder::default()
@@ -195,6 +208,11 @@ impl Camera {
     .camera(self)
     .build()?
     .on_touch(event)
+  }
+
+  /// Convert camera to json
+  pub fn to_json(&self) -> Result<String, JsError> {
+    Ok(serde_json::to_string(&self).map_err(|e| format!("{e}"))?)
   }
 }
 

@@ -1,6 +1,6 @@
 
 #[wasm_bindgen::prelude::wasm_bindgen]
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Translation { 
   x: f32,
   y: f32,

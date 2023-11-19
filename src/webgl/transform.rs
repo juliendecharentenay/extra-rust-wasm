@@ -5,6 +5,7 @@ pub mod translation;
 // mod scaling;
 // mod transformation;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Transform {
   Identity(identity::Identity),
   Translate(translation::Translation),

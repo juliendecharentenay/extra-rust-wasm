@@ -47,7 +47,6 @@ impl From<Error> for wasm_bindgen::JsValue {
   }
 }
 
-
 impl From<Error> for Box<dyn std::error::Error> {
   fn from(error: Error) -> Box<dyn std::error::Error> {
     error.e

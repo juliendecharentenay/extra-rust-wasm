@@ -4,6 +4,7 @@ pub mod gridbuilder;
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Grid {
   normal:  nalgebra::Vector3<f32>,
   tangent: nalgebra::Vector3<f32>,
@@ -26,6 +27,13 @@ impl Grid {
 
   /// Draw the grid on the context
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
+    Drawable::draw(self, context, renderer)
+  }
+}
+
+impl Drawable for Grid {
+  /// Draw the grid on the context
+  fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     let vertices = self.vertices()?;
     let info = renderer::Info::Lines(&vertices);
     Ok( renderer.draw(context, info)? )
