@@ -33,7 +33,7 @@ impl Hexahedron {
   }
 
   /// Retrieve type name
-  pub fn type_name() -> Result<String, JsError> {
+  pub fn type_name(&self) -> Result<String, JsError> {
     Ok(Self::TYPE_NAME.to_string())
   }
 
