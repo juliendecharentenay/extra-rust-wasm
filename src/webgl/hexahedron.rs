@@ -17,6 +17,10 @@ impl Hexahedron {
   }
 }
 
+impl Hexahedron {
+  pub const TYPE_NAME: &str = "Hexahedron";
+}
+
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl Hexahedron {
@@ -26,6 +30,11 @@ impl Hexahedron {
     Ok( Hexahedron { start, end, 
           transform: Vec::new(),
           } )
+  }
+
+  /// Retrieve type name
+  pub fn type_name() -> Result<String, JsError> {
+    Ok(Self::TYPE_NAME.to_string())
   }
 
   pub fn translate(self, translate: transform::translation::Translation) -> Self {

@@ -29,10 +29,10 @@ extern "C" {
   fn try_as_hexahedron(v: wasm_bindgen::JsValue) -> Result<hexahedron::Hexahedron, wasm_bindgen::JsValue>;
 }
 
-#[wasm_bindgen::prelude::wasm_bindgen(inline_js = "export function get_constructor_name(v) { return v.constructor.name; }")]
+#[wasm_bindgen::prelude::wasm_bindgen(inline_js = "export function get_type_name(v) { return v.type_name(); }")]
 extern "C" {
   #[wasm_bindgen::prelude::wasm_bindgen(catch)]
-  fn get_constructor_name(v: &wasm_bindgen::JsValue) -> Result<String, wasm_bindgen::JsValue>;
+  fn get_type_name(v: &wasm_bindgen::JsValue) -> Result<String, wasm_bindgen::JsValue>;
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -46,11 +46,11 @@ pub enum WebglError {
 impl std::convert::TryFrom<wasm_bindgen::JsValue> for DrawableElement {
   type Error = WebglError;
   fn try_from(v: wasm_bindgen::JsValue) -> Result<Self, Self::Error> {
-    let name = get_constructor_name(&v).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError })?;
+    let name = get_type_name(&v).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError })?;
     match name.as_str() {
-      "Grid"       => try_as_grid(v).map(|r| r.into()).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError }),
-      "Hexahedron" => try_as_hexahedron(v).map(|r| r.into()).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError }),
-      _            => Err(WebglError::DrawableUnsupported(name)),
+      grid::Grid::TYPE_NAME => try_as_grid(v).map(|r| r.into()).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError }),
+      hexahedron::Hexahedron::TYPE_NAME => try_as_hexahedron(v).map(|r| r.into()).map_err(|e| { web_sys::console::error_1(&e); WebglError::DrawableError }),
+      _ => Err(WebglError::DrawableUnsupported(name)),
     }
   }
 }

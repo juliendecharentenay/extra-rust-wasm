@@ -13,6 +13,10 @@ pub struct Grid {
   n:       u32,
 }
 
+impl Grid {
+  pub const TYPE_NAME: &str = "Grid";
+}
+
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl Grid {
@@ -23,6 +27,11 @@ impl Grid {
          n:        u32) -> Result<Grid, Error>
   {
     Ok( Grid { normal, tangent, center, delta, n, } )
+  }
+
+  /// Retrieve type name
+  pub fn type_name() -> Result<String, JsError> {
+    Ok(Self::TYPE_NAME.to_string())
   }
 
   /// Draw the grid on the context
