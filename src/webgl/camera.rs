@@ -5,6 +5,8 @@ mod mousecamera; use mousecamera::{MouseCamera, MouseCameraBuilder};
 mod wheelcamera; use wheelcamera::WheelCameraBuilder;
 mod touchcamera; use touchcamera::{TouchCamera, TouchCameraBuilder};
 
+fn make_false() -> bool { false }
+
 /// Object to represent a camera
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -15,19 +17,13 @@ pub struct Camera {
   eye:    nalgebra::Point3<f32>,
   target: nalgebra::Point3<f32>,
   up:     nalgebra::Vector3<f32>,
-  // view:   nalgebra::Matrix4<f32>,
-  // distance: f32,
+  #[serde(skip, default = "make_false")]
+  updated: bool,
+  #[serde(skip)]
+  mouse_move: Option<web_sys::MouseEvent>,
+  #[serde(skip)]
+  mouse_select: Option<web_sys::MouseEvent>,
 }
-
-/*
-impl Default for Camera {
-  fn default() -> Self {
-    Camera { 
-      width: 
-    }
-  }
-}
-*/
 
 impl Camera {
   /// New
@@ -39,7 +35,16 @@ impl Camera {
     let up = si.cross(&fw).normalize();
     Ok(Camera {
       width, height, fov, eye, target, up,
+      updated: true,
+      mouse_move: None,
+      mouse_select: None,
     })
+  }
+
+  /// Assign the position of mouse select event
+  fn with_mouse_select(mut self, event: web_sys::MouseEvent) -> Camera {
+    self.mouse_select = Some(event);
+    self
   }
 
   /// Return `f` vector (ie the unit vector in the direction `(eye, target)`)
@@ -62,6 +67,9 @@ impl Camera {
   /// Create a new camera applying a rotation
   fn rotate_view(&self, rotation: nalgebra::Rotation3<f32>) -> Camera {
     let mut c = self.clone();
+    c.updated      = true;
+    c.mouse_move   = None;
+    c.mouse_select = None;
     c.target = self.eye + rotation * (self.target - self.eye);
     c.up     = rotation * self.up;
     c
@@ -70,6 +78,9 @@ impl Camera {
   /// Create a new camera applying a translation
   fn translate_view(&self, translation: nalgebra::Translation3<f32>) -> Camera {
     let mut c = self.clone();
+    c.updated      = true;
+    c.mouse_move   = None;
+    c.mouse_select = None;
     c.eye = translation * self.eye;
     c.target = translation * self.target;
     c
@@ -124,6 +135,9 @@ impl Camera {
   pub fn orbit_around_target(&self, angle_x_deg: f32, angle_y_deg: f32) -> Camera {
     let rotation = nalgebra::Rotation3::<f32>::new(self.side() * angle_y_deg * std::f32::consts::PI/180f32 + self.up() * angle_x_deg * std::f32::consts::PI/180f32);
     let mut c = self.clone();
+    c.updated      = true;
+    c.mouse_move   = None;
+    c.mouse_select = None;
     c.eye = self.target + rotation * ( self.eye - self.target );
     c.up = rotation * self.up();
     c
@@ -133,11 +147,16 @@ impl Camera {
   pub fn zoom_front(&self, delta: f32) -> Camera {
     self.translate_view((self.front() * delta / self.height * 1.0 * self.distance()).into())
   }
-
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 impl Camera {
+  /// Get width
+  pub fn get_width(&self) -> f32 { self.width }
+
+  /// Get height
+  pub fn get_height(&self) -> f32 { self.height }
+
   /// Update the camera `width`
   pub fn width(mut self, width: f32) -> Camera { self.width = width; self }
 
@@ -189,10 +208,20 @@ impl Camera {
   }
 
   /// Handle `mousemove` event
-  pub fn on_mouse_move(self, _event: web_sys::MouseEvent) -> Result<Camera, JsError> { Ok(self) }
+  pub fn on_mouse_move(mut self, event: web_sys::MouseEvent) -> Result<Camera, JsError> { 
+    self.updated      = false; 
+    self.mouse_move   = Some(event);
+    self.mouse_select = None;
+    Ok(self)
+  }
 
   /// Handle `mouseup` event
-  pub fn on_mouse_up(self, _event: web_sys::MouseEvent) -> Result<Camera, JsError> { Ok(self) }
+  pub fn on_mouse_up(mut self, event: web_sys::MouseEvent) -> Result<Camera, JsError> { 
+    self.updated      = false; 
+    self.mouse_move   = Some(event);
+    self.mouse_select = None;
+    Ok(self) 
+  }
 
   /// Handle `mousewheel` event
   pub fn on_wheel(self, event: web_sys::WheelEvent) -> Result<Camera, JsError> {
@@ -210,9 +239,32 @@ impl Camera {
     .on_touch(event)
   }
 
+  /// Retrieve the update status
+  pub fn updated(&self) -> bool { self.updated }
+
   /// Convert camera to json
   pub fn to_json(&self) -> Result<String, JsError> {
     Ok(serde_json::to_string(&self).map_err(|e| format!("{e}"))?)
+  }
+
+  /// Trigger a pick_hover
+  pub fn pick_hover(&self) -> Result<wasm_bindgen::JsValue, JsError> {
+    let r = self.mouse_move
+    .as_ref()
+    .clone()
+    .map(wasm_bindgen::JsValue::from)
+    .unwrap_or_else(|| wasm_bindgen::JsValue::NULL);
+    Ok(r)
+  }
+
+  /// Trigger a pick_select
+  pub fn pick_select(&self) -> Result<wasm_bindgen::JsValue, JsError> { 
+    let r = self.mouse_select
+    .as_ref()
+    .clone()
+    .map(wasm_bindgen::JsValue::from)
+    .unwrap_or_else(|| wasm_bindgen::JsValue::NULL);
+    Ok(r)
   }
 }
 

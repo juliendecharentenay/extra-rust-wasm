@@ -2,10 +2,16 @@ use super::*;
 
 pub mod gridbuilder;
 
+/// UID initialisation function
+fn nano_id() -> String { nanoid::nanoid!(6) }
+
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
+#[derive(Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Grid {
+  #[serde(default = "nano_id")]
+  uid:     String,
   normal:  nalgebra::Vector3<f32>,
   tangent: nalgebra::Vector3<f32>,
   center:  nalgebra::Point3<f32>,
@@ -26,15 +32,23 @@ impl Grid {
          delta:    f32,
          n:        u32) -> Result<Grid, Error>
   {
-    Ok( Grid { normal, tangent, center, delta, n, } )
+    Ok( Grid { uid: nanoid::nanoid!(6), normal, tangent, center, delta, n, } )
   }
 
-  /// Retrieve type name
+  /// Retrieve the object id
+  /// Exposed to JavaScript
+  pub fn uuid(&self) -> Result<String, JsError> {
+    Ok(self.uid.clone())
+  }
+
+  /// Retrieve type name.
+  /// Exposed to JavaScript
   pub fn type_name(&self) -> Result<String, JsError> {
     Ok(Self::TYPE_NAME.to_string())
   }
 
   /// Draw the grid on the context
+  /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     Drawable::draw(self, context, renderer)
   }
@@ -42,9 +56,13 @@ impl Grid {
 
 impl Drawable for Grid {
   /// Draw the grid on the context
-  fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
+  fn draw<T>(&self, context: &web_sys::WebGl2RenderingContext, renderer: &T) -> Result<(), JsError> 
+  where T: renderer::RendererTrait {
     let vertices = self.vertices()?;
-    let info = renderer::Info::Lines(&vertices);
+    let info = renderer::Info::Lines {
+      uid: &self.uid,
+      vertices: &vertices 
+    };
     Ok( renderer.draw(context, info)? )
   }
 }

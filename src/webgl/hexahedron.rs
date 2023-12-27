@@ -2,10 +2,16 @@ use super::*;
 
 pub mod hexahedronbuilder;
 
+/// UID initialisation function
+fn nano_id() -> String { nanoid::nanoid!(6) }
+
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen]
+#[derive(Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Hexahedron {
+  #[serde(default = "nano_id")]
+  uid:   String,
   start: nalgebra::Point3<f32>,
   end:   nalgebra::Point3<f32>,
   transform: Vec<transform::Transform>,
@@ -27,12 +33,20 @@ impl Hexahedron {
   fn new(
     start: nalgebra::Point3<f32>,
     end: nalgebra::Point3<f32>) -> Result<Hexahedron, Error> {
-    Ok( Hexahedron { start, end, 
+    Ok( Hexahedron { uid: nanoid::nanoid!(6),
+          start, end, 
           transform: Vec::new(),
           } )
   }
 
+  /// Retrieve the object id
+  /// Exposed to JavaScript
+  pub fn uuid(&self) -> Result<String, JsError> {
+    Ok(self.uid.clone())
+  }
+
   /// Retrieve type name
+  /// Exposed to JavaScript
   pub fn type_name(&self) -> Result<String, JsError> {
     Ok(Self::TYPE_NAME.to_string())
   }
@@ -52,6 +66,7 @@ impl Hexahedron {
   }
 
   /// Draw the hex on the context
+  /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     Drawable::draw(self, context, renderer)
   }
@@ -59,7 +74,8 @@ impl Hexahedron {
 
 impl Drawable for Hexahedron {
   /// Draw the hex on the context
-  fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
+  fn draw<T>(&self, context: &web_sys::WebGl2RenderingContext, renderer: &T) -> Result<(), JsError> 
+  where T: renderer::RendererTrait {
     let (vertices, normals) = self.vertices()?;
     let (vertices, normals): (Vec<(_, _, _)>, Vec<(_, _, _)>) = std::iter::zip(vertices.into_iter(), normals.into_iter())
       .map(|((p1, p2, p3), n)| 
@@ -73,6 +89,7 @@ impl Drawable for Hexahedron {
       .into_iter()
       .unzip();
     let info = renderer::Info::TrianglesWithNormals {
+      uid: &self.uid,
       vertices: &vertices,
       normals: &normals,
     };

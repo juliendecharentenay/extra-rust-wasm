@@ -9,6 +9,8 @@ pub struct MouseCamera {
   camera: Camera,
   mouse_down: web_sys::MouseEvent,
   mouse_move: web_sys::MouseEvent,
+  #[builder(default = "false")]
+  panning: bool,
 }
 
 #[cfg(feature = "wasm")]
@@ -42,12 +44,18 @@ impl MouseCamera {
   /// Handle mouse move event
   pub fn on_mouse_move(mut self, event: web_sys::MouseEvent) -> Result<MouseCamera, JsError> {
     self.mouse_move = event;
+    self.panning = true;
     Ok(self)
   }
 
   /// Handle mouse up event
   pub fn on_mouse_up(self, event: web_sys::MouseEvent) -> Result<Camera, JsError> {
-    Ok(self.on_mouse_move(event)?.camera())
+    let camera = if self.panning {
+      self.on_mouse_move(event)?.camera()
+    } else {
+      self.camera().with_mouse_select(event)
+    };
+    Ok(camera)
   }
 
   /// Handle `wheel` event
@@ -56,5 +64,14 @@ impl MouseCamera {
     self.on_mouse_up(e)
     .and_then(|c| c.on_wheel(event))
   }
+
+  /// Retrieve the udpate status
+  pub fn updated(&self) -> bool { true }
+
+  /// Trigger a pick hover
+  pub fn pick_hover(&self) -> Result<wasm_bindgen::JsValue, JsError> { Ok(wasm_bindgen::JsValue::NULL) }
+
+  /// Trigger a pick select
+  pub fn pick_select(&self) -> Result<wasm_bindgen::JsValue, JsError> { Ok(wasm_bindgen::JsValue::NULL) }
 }
 

@@ -15,5 +15,14 @@ impl WheelCamera {
         event.delta_y() as f32,
       ))
   }
+
+  /// Retrieve the udpate status
+  pub fn updated(&self) -> bool { true }
+
+  /// Trigger a pick hover
+  pub fn pick_hover(&self) -> Result<wasm_bindgen::JsValue, JsError> { Ok(wasm_bindgen::JsValue::NULL) }
+
+  /// Trigger a pick select
+  pub fn pick_select(&self) -> Result<wasm_bindgen::JsValue, JsError> { Ok(wasm_bindgen::JsValue::NULL) }
 }
 

@@ -10,6 +10,7 @@ mod transform;
 mod traits; pub use traits::{Drawable};
 
 /// List of drawable elements - ie elements that implements the drawable trait
+#[derive(Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[enum_dispatch::enum_dispatch(Drawable)]
 pub enum DrawableElement {
@@ -55,3 +56,11 @@ impl std::convert::TryFrom<wasm_bindgen::JsValue> for DrawableElement {
   }
 }
 
+impl std::convert::Into<wasm_bindgen::JsValue> for DrawableElement {
+  fn into(self) -> wasm_bindgen::JsValue {
+    match self {
+      DrawableElement::Grid(v)       => v.into(),
+      DrawableElement::Hexahedron(v) => v.into(),
+    }
+  }
+}

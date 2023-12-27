@@ -11,6 +11,10 @@ pub struct TouchCamera {
   touches: std::collections::HashMap<i32, web_sys::Touch>,
   #[builder(default)]
   touches_down: std::collections::HashMap<i32, web_sys::Touch>,
+  #[builder(default = "false")]
+  panning: bool,
+  #[builder(default)]
+  touch_select: Option<web_sys::Touch>,
 }
 
 #[cfg(feature = "wasm")]
@@ -73,6 +77,8 @@ impl TouchCamera {
     match event.type_().as_str() {
       "touchstart" => {
         if ! self.touches_down.is_empty() { self.camera = self.camera(); }
+        self.touch_select = None;
+        if self.touches_down.is_empty() && touch_list.length() == 1 { self.panning = false; } else { self.panning = true; }
         for i in 0..touch_list.length() {
           if let Some(touch) = touch_list.get(i) {
             self.touches.insert(touch.identifier(), touch);
@@ -83,6 +89,8 @@ impl TouchCamera {
       },
 
       "touchmove" => {
+        self.panning = true;
+        self.touch_select = None;
         for i in 0..touch_list.length() {
           if let Some(touch) = touch_list.get(i) {
             self.touches.insert(touch.identifier(), touch);
@@ -98,12 +106,31 @@ impl TouchCamera {
             self.touches.remove(&touch.identifier());
           }
         }
+        if self.panning == false && touch_list.length() == 1 && self.touches.len() == 0 {
+          self.touch_select = touch_list.get(0);
+        }
         self.touches_down = self.touches.clone();
         Ok(self)
       },
 
       _ => Err(format!("Event type {} is not supported", event.type_()).into()),
     }
+  }
+
+  /// Retrieve the udpate status
+  pub fn updated(&self) -> bool { true }
+
+  /// Trigger a pick hover
+  pub fn pick_hover(&self) -> Result<wasm_bindgen::JsValue, JsError> { Ok(wasm_bindgen::JsValue::NULL) }
+
+  /// Trigger a pick select
+  pub fn pick_select(&self) -> Result<wasm_bindgen::JsValue, JsError> { 
+    let r = self.touch_select
+    .as_ref()
+    .clone()
+    .map(wasm_bindgen::JsValue::from)
+    .unwrap_or_else(|| wasm_bindgen::JsValue::NULL);
+    Ok(r)
   }
 }
 
