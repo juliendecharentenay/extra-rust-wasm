@@ -17,6 +17,18 @@ pub struct Grid {
   center:  nalgebra::Point3<f32>,
   delta:   f32,
   n:       u32,
+  #[serde(default)]
+  transform: Vec<transform::Transform>,
+}
+
+impl Transformable for Grid {
+  fn with_transform(mut self, transform: transform::Transform) -> Self {
+    self.transform.push(transform); self
+  }
+
+  fn transform_iter(&self) -> std::slice::Iter<'_, transform::Transform> {
+    self.transform.iter()
+  }
 }
 
 impl Grid {
@@ -32,7 +44,7 @@ impl Grid {
          delta:    f32,
          n:        u32) -> Result<Grid, Error>
   {
-    Ok( Grid { uid: nanoid::nanoid!(6), normal, tangent, center, delta, n, } )
+    Ok( Grid { uid: nanoid::nanoid!(6), normal, tangent, center, delta, n, transform: Vec::new(), } )
   }
 
   /// Retrieve the object id
@@ -47,10 +59,25 @@ impl Grid {
     Ok(Self::TYPE_NAME.to_string())
   }
 
+  /// Apply a translation. Exposed to JavaScript
+  pub fn with_translate(self, translate: transform::translation::Translation) -> Self {
+    self.with_transform(translate.into())
+  }
+
   /// Draw the grid on the context
   /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     Drawable::draw(self, context, renderer)
+  }
+  pub fn clone(&self) -> Self {
+    Clone::clone(self)
+  }
+}
+
+impl Identifiable for Grid {
+  /// Retrieve the object uuid
+  fn uuid(&self) -> Result<String, Error> {
+    Ok(self.uid.clone())
   }
 }
 
@@ -59,6 +86,9 @@ impl Drawable for Grid {
   fn draw<T>(&self, context: &web_sys::WebGl2RenderingContext, renderer: &T) -> Result<(), JsError> 
   where T: renderer::RendererTrait {
     let vertices = self.vertices()?;
+    let vertices = vertices.into_iter()
+      .map(|(p1, p2)| Ok((self.transform_point(&p1)?, self.transform_point(&p2)?)) )
+      .collect::<Result<Vec<(nalgebra::Point3<f32>, nalgebra::Point3<f32>)>, Error>>()?;
     let info = renderer::Info::Lines {
       uid: &self.uid,
       vertices: &vertices 

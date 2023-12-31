@@ -13,6 +13,10 @@ pub struct Error {
   e: Box<dyn std::error::Error>,
 }
 
+impl Error {
+  pub fn inner(self) -> Box<dyn std::error::Error> { self.e }
+}
+
 impl From<JsError> for Error {
   fn from(e: JsError) -> Error { format!("{:?}", e).into() }
 }

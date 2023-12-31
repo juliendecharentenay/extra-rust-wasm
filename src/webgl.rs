@@ -7,12 +7,12 @@ pub mod camera; pub use camera::Camera;
 pub mod grid; pub use grid::Grid;
 pub mod hexahedron; pub use hexahedron::Hexahedron;
 mod transform;
-mod traits; pub use traits::{Drawable};
+mod traits; pub use traits::{Drawable, Identifiable, Transformable};
 
 /// List of drawable elements - ie elements that implements the drawable trait
 #[derive(Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[enum_dispatch::enum_dispatch(Drawable)]
+#[enum_dispatch::enum_dispatch(Drawable, Identifiable)]
 pub enum DrawableElement {
   Grid(grid::Grid),
   Hexahedron(hexahedron::Hexahedron),

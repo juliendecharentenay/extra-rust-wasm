@@ -17,11 +17,24 @@ pub struct Hexahedron {
   transform: Vec<transform::Transform>,
 }
 
+impl Transformable for Hexahedron {
+  fn with_transform(mut self, transform: transform::Transform) -> Self {
+    self.transform.push(transform); self
+  }
+
+  fn transform_iter(&self) -> std::slice::Iter<'_, transform::Transform> {
+    self.transform.iter()
+  }
+}
+  
+
+/*
 impl Hexahedron {
   fn transform(mut self, transform: transform::Transform) -> Self {
     self.transform.push(transform); self
   }
 }
+*/
 
 impl Hexahedron {
   pub const TYPE_NAME: &str = "Hexahedron";
@@ -51,24 +64,30 @@ impl Hexahedron {
     Ok(Self::TYPE_NAME.to_string())
   }
 
+  /// Apply a translation. Exposed to JavaScript
+  pub fn with_translate(self, translate: transform::translation::Translation) -> Self {
+    self.with_transform(translate.into())
+  }
+
+  /// Apply a translation. Exposed to JavaScript
   pub fn translate(self, translate: transform::translation::Translation) -> Self {
-    self.transform(translate.into())
-  }
-
-  fn transform_point(&self, p: &nalgebra::Point3<f32>) -> Result<nalgebra::Point3<f32>, Error> {
-    self.transform.iter().fold(Ok(p.clone()), |p, t| p.and_then(|p| t.transform_point(&p)))
-  }
-
-  fn transform_vector(&self, p: &nalgebra::Point3<f32>, v: &nalgebra::Vector3<f32>) -> Result<nalgebra::Vector3<f32>, Error> {
-    Ok(self.transform.iter().fold(Ok((p.clone(), v.clone())), 
-      |r: Result<(_, _), Error>, t| r.and_then(|(p, v)| Ok((t.transform_point(&p)?, t.transform_vector(&p, &v)?)))
-      )?.1)
+    self.with_transform(translate.into())
   }
 
   /// Draw the hex on the context
   /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     Drawable::draw(self, context, renderer)
+  }
+  pub fn clone(&self) -> Self {
+    Clone::clone(self)
+  }
+}
+
+impl Identifiable for Hexahedron {
+  /// Retrieve the object uuid
+  fn uuid(&self) -> Result<String, Error> {
+    Ok(self.uid.clone())
   }
 }
 
