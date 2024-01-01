@@ -2,7 +2,7 @@ use super::*;
 
 pub mod identity;
 pub mod translation;
-// mod scaling;
+pub mod scaling;
 // mod transformation;
 
 #[derive(Clone)]
@@ -10,7 +10,7 @@ pub mod translation;
 pub enum Transform {
   Identity(identity::Identity),
   Translate(translation::Translation),
-  // Scale(scaling::Scaling),
+  Scale(scaling::Scaling),
   // Transform(transformation::Transformation),
 }
 
@@ -20,6 +20,10 @@ impl From<identity::Identity> for Transform {
 
 impl From<translation::Translation> for Transform {
   fn from(v: translation::Translation) -> Transform { Transform::Translate(v) }
+}
+
+impl From<scaling::Scaling> for Transform {
+  fn from(v: scaling::Scaling) -> Transform { Transform::Scale(v) }
 }
 
 impl Transform {
@@ -41,8 +45,9 @@ impl Transform {
 
   fn matrix4_at(&self, _p: &nalgebra::Point3<f32>) -> Result<nalgebra::Matrix4<f32>, Error> {
     match self {
-      Transform::Identity(op) => Ok(op.matrix4()),
+      Transform::Identity(op)  => Ok(op.matrix4()),
       Transform::Translate(op) => Ok(op.matrix4()),
+      Transform::Scale(op)     => Ok(op.matrix4()),
     }
   }
 }

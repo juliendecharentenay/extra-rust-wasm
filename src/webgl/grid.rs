@@ -64,13 +64,29 @@ impl Grid {
     self.with_transform(translate.into())
   }
 
+  /// Apply a scaling. Exposed to JavaScript
+  pub fn with_scale(self, transform: transform::scaling::Scaling) -> Self {
+    self.with_transform(transform.into())
+  }
+
   /// Draw the grid on the context
   /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {
     Drawable::draw(self, context, renderer)
   }
+
   pub fn clone(&self) -> Self {
     Clone::clone(self)
+  }
+
+  /// Return the middle of the grid
+  pub fn transform_reference_point(&self) -> Result<js_sys::Float32Array, JsError> {
+    let p = self.transform_point(&self.center)?;
+    let r = js_sys::Float32Array::new_with_length(3);
+    r.set_index(0, p.x);
+    r.set_index(1, p.y);
+    r.set_index(2, p.z);
+    Ok(r)
   }
 }
 

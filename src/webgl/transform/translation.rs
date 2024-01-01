@@ -7,11 +7,18 @@ pub struct Translation {
   z: f32,
 }
 
+impl Translation {
+  pub const NAME: &str = "Translation";
+}
+
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl Translation {
   pub fn new(x: f32, y: f32, z: f32) -> Self {
     Translation { x, y, z }
   }
+
+  /// Retrieve the transformation name
+  pub fn name(&self) -> String { Translation::NAME.to_string() }
 
   pub fn combine(&self, other: Translation) -> Self {
     Translation { x: self.x + other.x, y: self.y + other.y, z: self.z + other.z }
