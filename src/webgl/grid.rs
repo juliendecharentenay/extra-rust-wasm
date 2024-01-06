@@ -69,6 +69,11 @@ impl Grid {
     self.with_transform(transform.into())
   }
 
+  /// Apply a rotateion. Exposed to JavaScript
+  pub fn with_rotate(self, transform: transform::rotation::Rotation) -> Self {
+    self.with_transform(transform.into())
+  }
+
   /// Draw the grid on the context
   /// Exposed to JavaScript
   pub fn draw(&self, context: &web_sys::WebGl2RenderingContext, renderer: &renderer::Renderer) -> Result<(), JsError> {

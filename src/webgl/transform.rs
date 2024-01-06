@@ -3,6 +3,7 @@ use super::*;
 pub mod identity;
 pub mod translation;
 pub mod scaling;
+pub mod rotation;
 // mod transformation;
 
 #[derive(Clone)]
@@ -11,6 +12,7 @@ pub enum Transform {
   Identity(identity::Identity),
   Translate(translation::Translation),
   Scale(scaling::Scaling),
+  Rotate(rotation::Rotation),
   // Transform(transformation::Transformation),
 }
 
@@ -24,6 +26,10 @@ impl From<translation::Translation> for Transform {
 
 impl From<scaling::Scaling> for Transform {
   fn from(v: scaling::Scaling) -> Transform { Transform::Scale(v) }
+}
+
+impl From<rotation::Rotation> for Transform {
+  fn from(v: rotation::Rotation) -> Transform { Transform::Rotate(v) }
 }
 
 impl Transform {
@@ -48,6 +54,7 @@ impl Transform {
       Transform::Identity(op)  => Ok(op.matrix4()),
       Transform::Translate(op) => Ok(op.matrix4()),
       Transform::Scale(op)     => Ok(op.matrix4()),
+      Transform::Rotate(op)    => Ok(op.matrix4()),
     }
   }
 }

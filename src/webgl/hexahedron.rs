@@ -74,6 +74,11 @@ impl Hexahedron {
     self.with_transform(transform.into())
   }
 
+  /// Apply a rotateion. Exposed to JavaScript
+  pub fn with_rotate(self, transform: transform::rotation::Rotation) -> Self {
+    self.with_transform(transform.into())
+  }
+
   /// Apply a translation. Exposed to JavaScript
   pub fn translate(self, translate: transform::translation::Translation) -> Self {
     self.with_transform(translate.into())
